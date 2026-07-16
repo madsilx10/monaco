@@ -9,6 +9,7 @@ const PRIVY_URL = 'https://auth.privy.io';
 const PRIVY_APP_ID = 'cmpeq3sma00000dlam52l6tjt';
 const PRIVY_CLIENT_ID = 'client-WY6ZY2XocmM5e9tFztEzrF5juwc7Uxe95iS8S1y5CeNw9';
 const CHAIN_ID = 1328;
+const STATIC_CLIENT_ID = '2fcec460c89c4bedb06781d4072db931'; // fix: clientId ini konstan di frontend, bukan random per-session
 
 const baseHeaders = {
   'Accept': '*/*',
@@ -45,7 +46,7 @@ async function connectWallet(privkey) {
   console.log(`\n[+] ${address}`);
 
   const caId = crypto.randomUUID();
-  const clientId = caId.replace(/-/g, '');
+  const clientId = STATIC_CLIENT_ID; // dulu: caId.replace(/-/g, '') -> ternyata harus konstan
   const walletPrivyHeaders = { ...privyHeaders, 'Privy-Ca-Id': caId };
 
   const keypair = nacl.sign.keyPair();
