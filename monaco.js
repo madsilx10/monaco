@@ -84,6 +84,8 @@ async function connectWallet(privkey) {
 
   if (!challengeRes.message) throw new Error('Challenge gagal: ' + JSON.stringify(challengeRes));
   console.log('OK');
+  console.log('[debug] challenge nonce:', challengeRes.nonce);
+  console.log('[debug] challenge keys:', Object.keys(challengeRes));
 
   // 4. Monaco verify
   process.stdout.write('[*] Monaco verify... ');
