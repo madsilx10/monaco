@@ -80,16 +80,14 @@ async function connectWallet(privkey) {
   }).then(r => r.json());
 
   if (!authRes.token) throw new Error('Privy auth gagal: ' + JSON.stringify(authRes));
-  const clientId = authRes.user.id; // full DID: "did:privy:xxx"
   console.log('OK');
-  console.log(`[*] clientId: ${clientId}`);
 
   // 3. Monaco challenge
   process.stdout.write('[*] Monaco challenge... ');
   const challengeRes = await fetch(`${BASE_URL}/api/v1/auth/challenge`, {
     method: 'POST',
     headers: baseHeaders,
-    body: JSON.stringify({ address, chainId: CHAIN_ID, clientId, sessionPublicKey }),
+    body: JSON.stringify({ address, chainId: CHAIN_ID, clientId: PRIVY_CLIENT_ID, sessionPublicKey }),
   });
   const challengeText = await challengeRes.text();
   let challengeJson;
