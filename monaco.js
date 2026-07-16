@@ -48,7 +48,7 @@ async function connectWallet(privkey) {
   const keypair = nacl.sign.keyPair();
   const sessionPublicKey = Buffer.from(keypair.publicKey).toString('hex');
   const sessionPrivkey = Buffer.from(keypair.secretKey).toString('hex');
-  const clientId = '1229a8c1-b612-494e-8381-59dda2c56e00';
+
 
   // 1. Privy init
   process.stdout.write('[*] Privy init... ');
@@ -80,6 +80,7 @@ async function connectWallet(privkey) {
   }).then(r => r.json());
 
   if (!authRes.token) throw new Error('Privy auth gagal: ' + JSON.stringify(authRes));
+  const clientId = authRes.user.id.split(':').pop();
   console.log('OK');
 
   // 3. Monaco challenge
