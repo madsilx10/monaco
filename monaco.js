@@ -30,7 +30,6 @@ const privyHeaders = {
   ...baseHeaders,
   'Sec-Fetch-Site': 'cross-site',
   'Privy-App-Id': PRIVY_APP_ID,
-  'Privy-Ca-Id': '1229a8c1-b612-494e-8381-59dda2c56e00',
   'Privy-Client': 'react-auth:3.34.0',
   'Privy-Client-Id': PRIVY_CLIENT_ID,
 };
@@ -45,6 +44,10 @@ async function connectWallet(privkey) {
   const address = wallet.address;
   console.log(`\n[+] ${address}`);
 
+  const caId = crypto.randomUUID();
+  const clientId = caId.replace(/-/g, '');
+  const walletPrivyHeaders = { ...privyHeaders, 'Privy-Ca-Id': caId };
+
   const keypair = nacl.sign.keyPair();
   const sessionPublicKey = Buffer.from(keypair.publicKey).toString('hex');
   const sessionPrivkey = Buffer.from(keypair.secretKey).toString('hex');
@@ -54,7 +57,7 @@ async function connectWallet(privkey) {
   process.stdout.write('[*] Privy init... ');
   const initRes = await fetch(`${PRIVY_URL}/api/v1/siwe/init`, {
     method: 'POST',
-    headers: privyHeaders,
+    headers: walletPrivyHeaders,
     body: JSON.stringify({ address }),
   }).then(r => r.json());
 
@@ -68,7 +71,7 @@ async function connectWallet(privkey) {
 
   const authRes = await fetch(`${PRIVY_URL}/api/v1/siwe/authenticate`, {
     method: 'POST',
-    headers: privyHeaders,
+    headers: walletPrivyHeaders,
     body: JSON.stringify({
       message: siweMsg,
       signature: privySig,
@@ -80,7 +83,6 @@ async function connectWallet(privkey) {
   }).then(r => r.json());
 
   if (!authRes.token) throw new Error('Privy auth gagal: ' + JSON.stringify(authRes));
-  console.log('[AUTH]', JSON.stringify(authRes));
   console.log('OK');
 
   // 3. Monaco challenge
@@ -88,7 +90,7 @@ async function connectWallet(privkey) {
   const challengeRes = await fetch(`${BASE_URL}/api/v1/auth/challenge`, {
     method: 'POST',
     headers: baseHeaders,
-    body: JSON.stringify({ address, chainId: CHAIN_ID, clientId: PRIVY_CLIENT_ID, sessionPublicKey }),
+    body: JSON.stringify({ address, chainId: CHAIN_ID, clientId, sessionPublicKey }),
   });
   const challengeText = await challengeRes.text();
   let challengeJson;
