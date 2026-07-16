@@ -40,7 +40,7 @@ async function connectWallet(privkey) {
   const keypair = nacl.sign.keyPair();
   const sessionPublicKey = Buffer.from(keypair.publicKey).toString('hex');
   const sessionPrivkey = Buffer.from(keypair.secretKey).toString('hex');
-  const clientId = crypto.randomUUID();
+  const clientId = crypto.randomUUID().replace(/-/g, '');
 
   // 1. Privy init
   process.stdout.write('[*] Privy init... ');
