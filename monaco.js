@@ -80,6 +80,7 @@ async function connectWallet(privkey) {
   }).then(r => r.json());
 
   if (!authRes.token) throw new Error('Privy auth gagal: ' + JSON.stringify(authRes));
+  console.log('[AUTH]', JSON.stringify(authRes));
   console.log('OK');
 
   // 3. Monaco challenge
