@@ -2,10 +2,7 @@
 const { ethers } = require('ethers');
 const fs = require('fs');
 const crypto = require('crypto');
-const ed = require('@noble/ed25519');
-const { sha512 } = require('@noble/hashes/sha2');
-
-ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
+const nacl = require('tweetnacl');
 
 const BASE_URL = 'https://staging.apimonaco.xyz';
 const PRIVY_URL = 'https://auth.privy.io';
@@ -39,9 +36,10 @@ async function connectWallet(privkey) {
   const address = wallet.address;
   console.log(`\n[+] ${address}`);
 
-  const sessionPriv = ed.utils.randomPrivateKey();
-  const sessionPub = ed.getPublicKey(sessionPriv);
-  const sessionPublicKey = Buffer.from(sessionPub).toString('hex');
+  // Generate session keypair Ed25519 pake tweetnacl
+  const keypair = nacl.sign.keyPair();
+  const sessionPublicKey = Buffer.from(keypair.publicKey).toString('hex');
+  const sessionPrivkey = Buffer.from(keypair.secretKey).toString('hex');
   const clientId = crypto.randomUUID();
 
   // 1. Privy init
@@ -112,7 +110,7 @@ async function connectWallet(privkey) {
     address,
     clientId,
     sessionPublicKey,
-    sessionPrivkey: Buffer.from(sessionPriv).toString('hex'),
+    sessionPrivkey,
     privyToken: authRes.privy_access_token,
     refreshToken: authRes.refresh_token,
     expiresAt: verifyRes.expiresAt,
