@@ -3,7 +3,7 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const crypto = require('crypto');
 const ed = require('@noble/ed25519');
-const { sha512 } = require('@noble/hashes/sha512');
+const { sha512 } = require('@noble/hashes/sha2');
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
