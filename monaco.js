@@ -12,14 +12,23 @@ const CHAIN_ID = 1328;
 
 const baseHeaders = {
   'Accept': '*/*',
+  'Accept-Encoding': 'gzip, deflate, br, zstd',
+  'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
   'Content-Type': 'application/json',
   'Origin': 'https://trade.0xmonaco.com',
   'Referer': 'https://trade.0xmonaco.com/',
+  'Sec-Ch-Ua': '"Mises";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+  'Sec-Ch-Ua-Mobile': '?1',
+  'Sec-Ch-Ua-Platform': '"Android"',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'cross-site',
   'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
 };
 
 const privyHeaders = {
   ...baseHeaders,
+  'Sec-Fetch-Site': 'cross-site',
   'Privy-App-Id': PRIVY_APP_ID,
   'Privy-Ca-Id': '1229a8c1-b612-494e-8381-59dda2c56e00',
   'Privy-Client': 'react-auth:3.34.0',
@@ -36,11 +45,10 @@ async function connectWallet(privkey) {
   const address = wallet.address;
   console.log(`\n[+] ${address}`);
 
-  // Generate session keypair Ed25519 pake tweetnacl
   const keypair = nacl.sign.keyPair();
   const sessionPublicKey = Buffer.from(keypair.publicKey).toString('hex');
   const sessionPrivkey = Buffer.from(keypair.secretKey).toString('hex');
-  const clientId = '1229a8c1b612494e838159dda2c56e00';
+  const clientId = '1229a8c1-b612-494e-8381-59dda2c56e00';
 
   // 1. Privy init
   process.stdout.write('[*] Privy init... ');
@@ -72,7 +80,6 @@ async function connectWallet(privkey) {
   }).then(r => r.json());
 
   if (!authRes.token) throw new Error('Privy auth gagal: ' + JSON.stringify(authRes));
-  console.log('[debug] privy user:', JSON.stringify(authRes.user));
   console.log('OK');
 
   // 3. Monaco challenge
@@ -81,15 +88,20 @@ async function connectWallet(privkey) {
     method: 'POST',
     headers: baseHeaders,
     body: JSON.stringify({ address, chainId: CHAIN_ID, clientId, sessionPublicKey }),
-  }).then(r => r.json());
-
-  if (!challengeRes.message || challengeRes.error) throw new Error('Challenge gagal: ' + JSON.stringify(challengeRes));
+  });
+  const challengeText = await challengeRes.text();
+  let challengeJson;
+  try {
+    challengeJson = JSON.parse(challengeText);
+  } catch(e) {
+    throw new Error('Challenge CF block: ' + challengeText.slice(0, 100));
+  }
+  if (!challengeJson.message || challengeJson.error) throw new Error('Challenge gagal: ' + JSON.stringify(challengeJson));
   console.log('OK');
-  console.log('[debug] challenge nonce:', challengeRes.nonce);
 
   // 4. Monaco verify
   process.stdout.write('[*] Monaco verify... ');
-  const monacoSig = await wallet.signMessage(challengeRes.message);
+  const monacoSig = await wallet.signMessage(challengeJson.message);
 
   const verifyRes = await fetch(`${BASE_URL}/api/v1/auth/verify`, {
     method: 'POST',
@@ -98,7 +110,7 @@ async function connectWallet(privkey) {
       address,
       chainId: CHAIN_ID,
       clientId,
-      nonce: challengeRes.nonce,
+      nonce: challengeJson.nonce,
       sessionPublicKey,
       signature: monacoSig,
     }),
